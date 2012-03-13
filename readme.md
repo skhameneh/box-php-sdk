@@ -1,13 +1,12 @@
-The Box_Rest_Client is a simple way to access the Box.net ReST API through PHP. 
+## What is it?
+The Box_Rest_Client is a simple way to access the Box.net api utilizing the ReST 
+api through PHP.
 
 ## Dependencies
-As of 5.1.2 SimpleXML is enabled by default unless you turned it off. 
-
-- cURL: http://us3.php.net/manual/en/curl.installation.php 
-- SimpleXML: http://us3.php.net/manual/en/simplexml.installation.php
-- PHP Version 5.3.x (This is the only version it has been tested on. If it works 
-on other versions, please let me know)
-
+- cURL
+- SimpleXML
+- PHP version 5.3x (This is where it has been tested.. it continues the pass 
+tests in other vresions, please let me know and this can be updated)
 
 ## How does it work?
 The `Box_Rest_Client` provides a standard way to execute various api methods from 
@@ -17,8 +16,8 @@ Rather than providing "aliases" to the box.net api, the client completely relies
 on the api_methods. Except in a few cases (authentication, folder_tree, etc.) you 
 will mostly be calling the api methods directly. 
 
-This happens through the use of the get()/post() methods which accept an API 
-method as well as any parameters that need to be passed. For example, to use the 
+This happens through the use of the exec() method which accepts an API method as 
+well as any parameters that need to be passed. As an example, to use the 
 get_account_tree api method you would do something like the following (note, the 
 example assumes you have already set an api_key and authenticated a user).
 
@@ -60,14 +59,9 @@ After you have the auth-token, you will need to provide it to the
 _replaces[[get_account_tree](http://developers.box.net/w/page/12923929/ApiFunction_get_account_tree)]_
 Since the `get_account_tree` api method returns a result structure that varies 
 based on the setup of a certain directory, the get_account_tree api method is 
-aliased as `$box_rest_client->folder(0)`. 
+aliased as ```$box_rest_client->folder(0)```
 
 That will instantly return a list of files/folders below the folder wth id 0. 
 It will also ensure that the folders/files are of type `Box_Client_Folder`/`Box_Client_File` 
 respectively. These provide a standard interface for accessing properties of 
 the files and will eventually mean that we can add individual features to it.
-
-By default it only does a first level tree listing, but this can be changed by 
-modifying the 2nd params argument. 
-
-	$box_rest_client->folder(0, array('params' => 'nozip','simple')); 
