@@ -391,7 +391,7 @@ class Box_Rest_Client {
 		
 		// assign a file name during construction OR by setting $file->attr('filename'); 
 		// manually
-		$split = explode('\\',$file->attr('localpath'));
+		$split = explode(DIRECTORY_SEPARATOR,$file->attr('localpath'));
 		$split[count($split)-1] = $file->attr('filename');
 		$new_localpath = implode('\\',$split);
 		if(!rename($file->attr('localpath'), $new_localpath)) {
