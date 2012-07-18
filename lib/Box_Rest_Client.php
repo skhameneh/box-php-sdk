@@ -5,7 +5,9 @@
  *		|__] |__| _/\_ ___ |  \ |___ ___]  |  ___ |___ |___ | |___ | \|  |  v0.3
  *
  *
- * Special thanks to Angelo R for the initial build of this library
+ *  Special thanks to:
+ *  Angelo R for the initial build of this library
+ *  Shawn Khameneh at GFX International for misc changes/additions
  *
  *
  *	The Box_Rest_Client is a PHP library for accessing the Box.net ReST api. It 
@@ -198,6 +200,17 @@ class Box_Rest_Client {
 	public $api_version = '1.0';
 	public $base_url = 'https://www.box.net/api';
 	public $upload_url = 'https://upload.box.net/api';
+	
+	public $use_session = false;
+	
+	// Set to true to return false on authenticate() instead of a redirect
+	public $no_redirect = false;
+	
+	// If storing data in session, allow changeable keys 
+	public $session_keys = array(
+		'ticket' => 'box_ticket',
+		'auth_token' => 'box_auth_token'
+	);
 
 	// Not implemented yet sadly..
 	public $MOBILE = false;
@@ -230,28 +243,68 @@ class Box_Rest_Client {
 	 * be present directly above the class.
 	 */
 	public function authenticate() {
-		if(array_key_exists('auth_token',$_GET)) {
-			$this->auth_token = $_GET['auth_token'];
-			
-			$box_rest_client_auth = new Box_Rest_Client_Auth();
-			return $box_rest_client_auth->store($this->auth_token);
+		if($this->use_session) {
+			if(isset($_SESSION[$this->session_keys['ticket']])) {
+				// Has a ticket in session let's check for an auth_token
+				if(!isset($_SESSION[$this->session_keys['auth_token']])) {
+					// No token in session, get one.
+					$res = $this->get('get_auth_token', array('api_key' => $this->api_key, 'ticket' => $_SESSION[$this->session_keys['ticket']]));
+					
+					if($res['status'] === 'get_auth_token_ok') {
+						$_SESSION[$this->session_keys['auth_token']] = $res['auth_token'];
+					} else {
+						throw new Box_Rest_Client_Exception($res['status']);
+					}
+				}
+				
+				$this->auth_token = $_SESSION[$this->session_keys['auth_token']];
+				
+				$box_rest_client_auth = new Box_Rest_Client_Auth();
+				return $box_rest_client_auth->store($this->auth_token);
+			}
+		} else {
+			if(array_key_exists('auth_token',$_GET)) {
+				$this->auth_token = $_GET['auth_token'];
+				
+				$box_rest_client_auth = new Box_Rest_Client_Auth();
+				return $box_rest_client_auth->store($this->auth_token);
+			}
 		}
-		else {
-			$res = $this->get('get_ticket',array('api_key' => $this->api_key));
-			if($res['status'] === 'get_ticket_ok') {
-				$this->ticket = $res['ticket'];
-				
-				if($this->MOBILE) {
-					header('location: https://m.box.net/api/1.0/auth/'.$this->ticket);
-				}
-				else {
-					header('location: https://www.box.net/api/1.0/auth/'.$this->ticket);
-				}
-				
+		
+		// Not authenticated & no ticket, generate 
+		
+		$res = $this->get('get_ticket',array('api_key' => $this->api_key));
+		if($res['status'] === 'get_ticket_ok') {
+			$this->ticket = $res['ticket'];
+			if($this->use_session) {
+				$_SESSION[$this->session_keys['ticket']] = $this->ticket;
 			}
-			else {
-				throw new Box_Rest_Client_Exception($res['status']);
+			
+			if($this->no_redirect) {
+				return false;
+			} else {
+				header('location: ' . $this->get_auth_url());
 			}
+			
+		} else {
+			throw new Box_Rest_Client_Exception($res['status']);
+		}
+	}
+	
+	/**
+	 *
+	 * Returns an authentication URL, return false if no ticket has been set
+	 * @return bool|string $auth_url Authication URL or false if a ticket has not been set.
+	 */
+	public function get_auth_url() {
+		if(isset($this->ticket)) {
+			if($this->MOBILE) {
+				return 'https://m.box.net/api/1.0/auth/'.$this->ticket;
+			} else {
+				return 'https://www.box.net/api/1.0/auth/'.$this->ticket;
+			}
+		} else {
+			return false;
 		}
 	}
 	
