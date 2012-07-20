@@ -789,11 +789,11 @@ class Box_Client_File {
 		$url = $box_net->base_url.'/'.$box_net->api_version;
 		if($version == 0) {
 			// not a specific version download
-			$url .= '/download/'.$box_net->auth_token.'/'.$this->attr('id');
+			$url .= '/download/'.$box_net->auth_token.'/'.$this->attr('file_id');
 		}
 		else {
 			// downloading a certain version
-			$url .= '/download_version/'.$box_net->auth_token.'/'.$this->attr('id').'/'.$version;
+			$url .= '/download_version/'.$box_net->auth_token.'/'.$this->attr('file_id').'/'.$version;
 		}
 		
 		return $url;
